@@ -1,0 +1,16 @@
+int main()
+{
+	decl
+		int temp,a;
+	enddecl
+	begin
+		a=1;
+		a = a/0;
+		breakpoint;
+		while(a<=100) do
+			temp = exposcall("Write",-2,a);
+			a = a + 2;
+		endwhile;
+		return 0;
+	end
+}

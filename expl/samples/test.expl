@@ -1,0 +1,28 @@
+type 
+node{
+	int data;
+	node next;
+}
+endtype
+int main()
+{
+	decl
+		node h,r;
+		int val,temp,n;
+	enddecl
+	begin
+		h=null;
+		val=initialize();
+		r=alloc();
+		r.data=34;
+		r.next=null;
+		h=r;
+		write("Enter num");
+		read(n);
+		write("node data");
+		write(h.data);
+		
+		return 0;
+	end
+	
+}

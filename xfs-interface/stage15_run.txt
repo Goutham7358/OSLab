@@ -1,0 +1,4 @@
+load --module 7 $HOME/myexpos/spl/spl_progs/stage14_boot_module.xsm
+load --module 4 $HOME/myexpos/spl/spl_progs/deviceManagerModule.xsm
+load --module 0 $HOME/myexpos/spl/spl_progs/resourceManager.xsm
+load --int=7 $HOME/myexpos/spl/spl_progs/stage15_int7.xsm

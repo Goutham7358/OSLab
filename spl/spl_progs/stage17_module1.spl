@@ -1,0 +1,129 @@
+alias funcNumber R1;
+alias currentPID R2;
+
+if(funcNumber==2) then
+	alias userPNumber R4;
+	userPNumber = [PROCESS_TABLE + currentPID*16 + 11];
+	alias counter R5;
+	counter=0;
+	while(counter<8) do
+		if([userPNumber*512+496+2*counter]==SEMAPHORE) then
+			multipush(R0,R1,R2,R3,R4,R5);
+				alias semID R3;
+				semID=counter;
+				funcNumber=7;
+				call MOD_0;
+			multipop(R0,R1,R2,R3,R4,R5);
+			[userPNumber*512+496+2*counter]=-1;
+		endif;
+		counter=counter+1;
+	endwhile;
+	multipush(R0,R1,R2,R3,R4);
+	funcNumber = 2;
+	alias pNumber R2;
+	pNumber = userPNumber;
+	call MOD_2;
+	multipop(R0,R1,R2,R3,R4);
+	return;
+endif;
+
+if(funcNumber==3) then
+	
+	if([PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]!=9) then
+		alias counter R5;
+		counter=0;
+		while(counter<16) do
+			if(([PROCESS_TABLE+counter*16+4]==WAIT_PROCESS) && ([PROCESS_TABLE+counter*16+5]==[SYSTEM_STATUS_TABLE+1])) then
+				[PROCESS_TABLE+counter*16+4]=READY;
+			endif;
+			
+			if([PROCESS_TABLE+counter*16+2]==[SYSTEM_STATUS_TABLE+1]) then
+				[PROCESS_TABLE+counter*16+2]=-1;
+			endif;
+			counter=counter+1;
+		endwhile;
+	endif;
+	multipush(R0,R1,R2,R3,R4);             // free page table
+	funcNumber = 4;
+	
+	call MOD_1;
+	
+	multipop(R0,R1,R2,R3,R4);
+	
+	multipush(R0,R1,R2,R3,R4);		// free user area page
+	funcNumber = 2;
+	
+	call MOD_1;
+	
+	multipop(R0,R1,R2,R3,R4);
+	
+	[PROCESS_TABLE + currentPID*16 +4] = TERMINATED;
+	
+	
+	return;
+endif;
+
+if(funcNumber==4) then
+	[PTBR] = -1;
+	[PTBR + 1] = "0000";
+	[PTBR + 2] = -1;
+	[PTBR + 3] = "0000";
+	
+	alias counter R5;
+	counter = 0;
+	
+	while(counter<8) do
+		if([PTBR + 2*(counter+2)] != -1) then
+			multipush(R0,R1,R2,R3,R4,R5);
+			funcNumber = 2;
+			alias pNumber R2;
+			pNumber = [PTBR + 2*(counter+2)];
+			call MOD_2;
+			multipop(R0,R1,R2,R3,R4,R5);
+			[PTBR + 2*(counter+2)]=-1;
+			[PTBR + 2*(counter+2) + 1] = "0000";
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	counter = 2;
+	
+	while(counter < 10) do
+		if((counter == 2)||(counter == 3)||(counter == 8)||(counter == 9)) then
+			if([DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE]*10 + counter] != -1) then
+				multipush(R0,R1,R2,R3,R4,R5);
+				funcNumber = 4;
+				alias blockNumber R3;
+				blockNumber = [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE]*10 + counter];
+				call MOD_2;
+				multipop(R0,R1,R2,R3,R4,R5);
+			endif;
+		endif;
+		[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE]*10 + counter] = -1;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;	
+
+if(funcNumber==1) then
+	
+	alias counter R3;
+	counter=0;
+	while(counter<16) do
+		if([PROCESS_TABLE +counter*16 + 4]==TERMINATED) then
+			[PROCESS_TABLE +counter*16 +1]=counter;
+			[PROCESS_TABLE +counter*16+ 4]=ALLOCATED;
+			[PROCESS_TABLE +counter*16 + 14]=PAGE_TABLE_BASE +20*counter;
+			[PROCESS_TABLE +counter*16 +15]=10;
+			R0=counter;
+			return;
+		endif;
+		counter=counter+1;
+	endwhile;
+	R0=-1;
+	return;
+endif;
+			
+			
+			
+				

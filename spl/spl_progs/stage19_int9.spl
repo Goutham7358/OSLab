@@ -1,0 +1,135 @@
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = 9;
+alias userSP R9;
+userSP = SP;
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13] = SP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+print("EXEC!");
+alias physicalPageNum R1;
+alias offset R2;
+alias fileNameAddr R3;
+physicalPageNum = [PTBR + 2*(userSP-4)/512];
+offset = (userSP-4)%512;
+fileNameAddr = (physicalPageNum*512) + offset;
+alias fileName R4;
+fileName = [fileNameAddr];
+
+alias counter R5;
+counter=0;
+alias inodeIndex R6;
+inodeIndex = -1;
+while(counter < 60) do
+	if(([INODE_TABLE +counter*16 + 1] == fileName) && ([INODE_TABLE + counter*16] == 3)) then
+		inodeIndex = INODE_TABLE + counter*16;
+		break;
+	endif;
+	counter = counter + 1;
+endwhile;
+
+if(inodeIndex == -1) then
+	alias physicalAddrRetVal R7;
+	physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+	[physicalAddrRetVal] = -1;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9] = 0;
+	SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 + 13];
+	ireturn;
+else
+	print("GotFILE");
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+	alias funcNumber R1;
+	alias currentPID R2;
+	funcNumber = 3;
+	currentPID = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_1;
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+	
+	
+	
+	alias userPNumber R8;
+	userPNumber = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11];
+	[MEMORY_FREE_LIST + userPNumber] = [MEMORY_FREE_LIST + userPNumber] + 1;
+	
+	counter = 0;
+	while(counter<8) do
+		[userPNumber*512 + 512 -16 + 2*counter] = -1;
+		counter = counter + 1;
+	endwhile;
+	
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+	
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 + 4] = RUNNING;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+ 1]*16 + 7] = inodeIndex;
+	
+	[PTBR+0] = 63;
+	[PTBR+1] = "0100";
+	[PTBR+2] = 64;
+	[PTBR+3] = "0100";
+
+	[PTBR +4] = -1;         //Heap is unallocated here Demand Paging will take care of it
+	[PTBR + 5] = "0000";
+	[PTBR + 6] = -1;
+	[PTBR + 7] = "0000";
+	
+	print("HEAPunallocted");
+	counter = 0;
+	while(counter < 2) do
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+		alias funcNumber R1;
+		alias retValue R0;
+		funcNumber = 1;
+		call MOD_2;
+		[PTBR + 2*(counter+8)] = retValue;
+		[PTBR + 2*(counter+8) + 1] = "0110";
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+		counter = counter + 1;
+	endwhile;
+	print("GotStackPage");
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);              // using Get Code Page to get memory page
+			alias retValue R0;
+			alias functionNum R1;
+			alias blockNum R2;
+			functionNum = 5;
+			blockNum = [inodeIndex + 8];
+			print("GngGETCODE");
+			call MOD_2;
+			print("BkGETCODE");
+			[PTBR + 8] = retValue;
+			[PTBR + 9] = "0100";		
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8,R9);
+	
+	print("GotCODEPAGE!");
+	[PTBR + 10] = -1;
+	[PTBR + 11] = "0000";
+	[PTBR + 12] = -1;
+	[PTBR + 13] = "0000";
+	[PTBR + 14] = -1;
+	[PTBR + 15] = "0000";
+	
+		
+	counter = 2;
+	while(counter < 10) do
+		if((counter>= 4) && (counter<=7)) then
+			[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE +1]*10 + counter] = [inodeIndex + (counter -4) + 8];
+			
+		else
+			[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE +1]*10 + counter] = -1;
+		endif;
+		
+		counter = counter + 1;
+	endwhile;
+	
+	
+	[[PTBR + 16]*512] = [[PTBR + 8]*512 + 1];	
+	SP = 8*512;
+	
+	counter = [[PTBR + 16]*512];
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9] = 0;
+	breakpoint;
+	
+	alias physicalAddrRetVal R7;
+	physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+	[physicalAddrRetVal] = 0;
+	breakpoint;
+	ireturn;
+endif;
+

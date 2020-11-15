@@ -1,0 +1,31 @@
+decl
+int gcdFunction(int a, int b);
+enddecl
+int gcdFunction(int a, int b)
+{
+	decl
+		int var;
+	enddecl
+	begin
+	while(a!=0) do
+		var = a;
+		a = b%a;
+		b = var;
+	endwhile;
+	return b;
+	end
+}
+int main()
+{
+	decl
+		int a,b,gcd,temp,q;
+	enddecl
+	begin
+		temp = exposcall("Read",-1,a);
+		temp = exposcall("Read",-1,b);
+		gcd = gcdFunction(a,b);
+		temp = exposcall("Write",-2,gcd);
+		return 0;
+	end
+}
+

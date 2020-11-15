@@ -1,0 +1,8 @@
+load --module 7 $HOME/myexpos/spl/spl_progs/stage16_boot_module.xsm
+load --exhandler $HOME/myexpos/spl/spl_progs/exceptionHandler.xsm
+load --module 2 $HOME/myexpos/spl/spl_progs/stage17_module2.xsm
+load --module 1 $HOME/myexpos/spl/spl_progs/stage17_module1.xsm
+load --int=9 $HOME/myexpos/spl/spl_progs/stage19_int9.xsm
+load --module 4 $HOME/myexpos/spl/spl_progs/deviceManagerModule.xsm
+load --int=6 $HOME/myexpos/spl/spl_progs/stage16_int6.xsm
+load --module 5 $HOME/myexpos/spl/spl_progs/stage14_module5.xsm

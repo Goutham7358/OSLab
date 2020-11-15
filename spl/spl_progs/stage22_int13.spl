@@ -1,0 +1,112 @@
+alias userSP R5;
+userSP=SP;
+
+alias processTAddr R7;
+processTAddr = PROCESS_TABLE +[SYSTEM_STATUS_TABLE+1]*16;
+
+[processTAddr + 13] = SP;        // saving value of SP => USER SP 
+SP = [processTAddr + 11]*512 - 1; // SP=>beginning of user area page
+
+alias sysCallNum R6;
+sysCallNum = [([PTBR + 2*(userSP-5)/512]*512) + ((userSP-5)%512)]; // getting syscall from user stack
+
+[processTAddr + 9] = sysCallNum; //set the MODEFLAG with syscallnum  
+
+alias physicalAddrRetVal R10;
+physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+
+if(sysCallNum==17) then  // Semget 
+
+	alias counter R8;
+	counter=0;
+	alias perPFIndex R9;
+	perPFIndex=-1;
+	
+	
+	while(counter<8) do
+		if([[processTAddr + 11]*512+ 496+2*counter]==-1) then
+			perPFIndex=counter;
+			break;
+		endif;
+		counter=counter+1;
+	endwhile;
+	
+	if(perPFIndex==-1) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	[[processTAddr + 11]*512+ 496+2*perPFIndex]=SEMAPHORE;
+	multipush(R5,R6,R7,R8,R9,R10);
+		alias retValue R0;
+		alias funcNumber R1;
+		alias currentPID R2;
+		
+		funcNumber=6;
+		currentPID=[SYSTEM_STATUS_TABLE+1];
+		
+		call MOD_0; // calling resource manager for Acquire Semaphore
+	multipop(R5,R6,R7,R8,R9,R10);
+	
+	if(retValue==-1) then // No free semaphores
+		[physicalAddrRetVal]=-2;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	print("Semget");
+	print(retValue);
+	print("\\\\\\\\\\\\\");
+	
+	[[processTAddr + 11]*512+ 496+2*perPFIndex +1]=retValue; // Attaching semaphore to the process
+	
+	[physicalAddrRetVal]=perPFIndex;
+	[processTAddr +9]=0;
+	SP=[processTAddr+13];
+	ireturn;
+endif;
+
+if(sysCallNum==18) then // semrelease system call
+	alias semID R8;
+	semID = [([PTBR + 2*(userSP-4)/512]*512) + ((userSP-4)%512)];
+	print("SemRelease");
+	print("semID");
+	print(semID);
+	if((semID<0)||(semID>7)) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	
+	if([[processTAddr + 11]*512+ 496+2*semID]!=SEMAPHORE) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	print("inSEMRELS");
+	multipush(R5,R6,R7,R8,R9,R10);
+		alias retValue R0;
+		alias funcNumber R1;
+		alias semaphoreID R3;
+		alias currentPID R2;
+		
+		funcNumber=7;
+		semaphoreID=semID;
+		currentPID=[SYSTEM_STATUS_TABLE+1];
+		print("GngF7MOD0");
+		call MOD_0; // calling resource manager for Releasing Semaphore
+		print("BackF7MOD0");
+	multipop(R5,R6,R7,R8,R9,R10);
+	
+	[[processTAddr + 11]*512+ 496+2*semID]=-1;
+	
+	[physicalAddrRetVal]=0;
+	[processTAddr +9]=0;
+	SP=[processTAddr+13];
+	ireturn;	
+endif;
+
+

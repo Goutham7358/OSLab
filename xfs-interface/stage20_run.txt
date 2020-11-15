@@ -1,0 +1,9 @@
+load --int=8 $HOME/myexpos/spl/spl_progs/Interrupt8.xsm
+load --int=10 $HOME/myexpos/spl/spl_progs/stage20_int10.xsm
+load --module 2 $HOME/myexpos/spl/spl_progs/stage17_module2.xsm
+load --module 1 $HOME/myexpos/spl/spl_progs/stage17_module1.xsm
+load --module 5 $HOME/myexpos/spl/spl_progs/stage14_module5.xsm
+load --init $HOME/myexpos/expl/samples/stage20_a1.xsm
+load --module 7 $HOME/myexpos/spl/spl_progs/stage16_boot_module.xsm
+load --os $HOME/myexpos/spl/spl_progs/stage13_os_startup.xsm
+load --int=9 $HOME/myexpos/spl/spl_progs/stage19_int9.xsm

@@ -1,0 +1,17 @@
+int main()
+{
+decl
+    int temp, pid, a;
+    string input;
+enddecl
+begin
+    temp=exposcall("Write",-2,"In init program");
+    temp=exposcall("Write",-2,"Is int11 working");
+    breakpoint;
+    a=exposcall("Getpid");
+    temp=exposcall("Write",-2,"PID Is");
+    temp=exposcall("Write",-2,a);
+
+return 0;
+end
+}

@@ -1,0 +1,13 @@
+MOV R3, 1
+MOV R1, 20
+loop:
+MOV R16, R3
+PORT P1, R16
+OUT
+
+INR R3
+
+MOV R2, R3
+LE R2, R1
+JNZ R2, loop
+HALT

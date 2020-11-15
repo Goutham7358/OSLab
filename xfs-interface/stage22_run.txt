@@ -1,0 +1,13 @@
+load --int=13 $HOME/myexpos/spl/spl_progs/stage22_int13.xsm
+load --int=14 $HOME/myexpos/spl/spl_progs/stage22_int14.xsm
+load --module 7 $HOME/myexpos/spl/spl_progs/stage16_boot_module.xsm
+load --module 1 $HOME/myexpos/spl/spl_progs/stage17_module1.xsm
+load --module 0 $HOME/myexpos/spl/spl_progs/resourceManager.xsm
+load --int=8 $HOME/myexpos/spl/spl_progs/stage22_int8.xsm
+load --init $HOME/myexpos/expl/samples/s21_shell.xsm
+load --int=11 $HOME/myexpos/spl/spl_progs/stage21_int11.xsm
+load --int=9 $HOME/myexpos/spl/spl_progs/stage19_int9.xsm
+load --module 2 $HOME/myexpos/spl/spl_progs/stage17_module2.xsm
+load --module 4 $HOME/myexpos/spl/spl_progs/deviceManagerModule.xsm
+load --exhandler $HOME/myexpos/spl/spl_progs/exceptionHandler.xsm
+load --module 5 $HOME/myexpos/spl/spl_progs/stage14_module5.xsm

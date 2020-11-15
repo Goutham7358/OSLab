@@ -1,0 +1,56 @@
+type 
+node {
+	int data;
+	node next;
+}
+endtype
+int main()
+{
+	decl
+		int val,temp;
+		int num,n,ncp;
+		node head;
+		node curr;
+		node varNode;
+		str msg,msg1;
+	enddecl
+	begin
+		msg = "Enter num";
+		temp = exposcall("Write",-2,msg);
+		read(n);
+		
+		breakpoint;
+		val = initialize();
+		head = null;
+		breakpoint;
+		while(n > 0) do
+			temp = exposcall("Write",-2,n);
+			read(val);
+			varNode = alloc();
+			varNode.data = val;
+			varNode.next = null;
+			
+			if(head==null) then
+				head = varNode;
+				curr = varNode;
+			else
+				curr.next = varNode;
+				curr = curr.next;
+			endif;
+			
+			n = n-1;
+		endwhile;
+			
+		n = 2;
+		while(n >0) do
+			temp = exposcall("Write",-2,head.data);
+			head = head.next;
+			n = n -1;
+		endwhile;
+		
+		
+		
+	return 0;
+	end
+	
+}

@@ -1,0 +1,128 @@
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = -1;
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13] = SP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+backup;
+multipush(EIP);
+
+if(EC!=0) then
+
+	if(EC==1) then
+		print EC;
+		print "IllegalInstr";
+	endif;
+	
+	if(EC==2) then
+		print EC;
+		print "IllegalMemory";
+	endif;
+	
+	if(EC==3) then
+		print EC;
+		print "ArithmExce";
+	endif;
+
+	
+	
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7);       // Exit System Call
+	alias funcNumber R1;
+	alias currentPID R2;
+	funcNumber = 3;
+	currentPID = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_1;
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+	
+	
+	call MOD_5;                               // Scheduler Call
+
+endif;
+
+if([PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13]==(512*PTLR -1)) then
+	print "Mem Full";
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7);       // Exit System Call
+	alias funcNumber R1;
+	alias currentPID R2;
+	funcNumber = 3;
+	currentPID = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_1;
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+	
+	
+	call MOD_5;                       
+endif;
+
+
+if(EPN==2) then
+	
+	alias counter R3;
+	
+	
+	
+	counter = 0;
+	while(counter < 2) do
+		print "I am Here";
+		multipush(R0,R1,R2,R3);
+		alias funcNumber R1;
+		alias retValue R0;
+		funcNumber = 1;
+		call MOD_2;
+		[PTBR + 2*(counter+2)] = retValue;
+		[PTBR + 2*(counter+2) + 1] = "1110";
+		multipop(R0,R1,R2,R3);
+		counter = counter + 1;
+	endwhile;
+	
+	breakpoint;
+endif;
+
+if(EPN==3) then
+	alias counter R3;
+	
+	print "Heap issue";
+	
+	counter = 0;
+	while(counter < 2) do
+		print "I am Here";
+		multipush(R0,R1,R2,R3);
+		alias funcNumber R1;
+		alias retValue R0;
+		funcNumber = 1;
+		call MOD_2;
+		
+		[PTBR + 2*(counter+2)] = retValue;
+		[PTBR + 2*(counter+2) + 1] = "1110";
+		multipop(R0,R1,R2,R3);
+		counter = counter + 1;
+	endwhile;
+	
+	breakpoint;
+endif;
+
+if((EPN!=2)&&(EPN!=3)) then
+
+	multipush(R0,R1,R2);              // using Get Code Page to get memory page
+		alias retValue R0;
+		alias functionNum R1;
+		alias blockNum R2;
+		functionNum = 5;
+		blockNum = [DISK_MAP_TABLE + ([SYSTEM_STATUS_TABLE +1]*10) + EPN];
+			
+		call MOD_2;
+			
+		[PTBR + 2*EPN] = retValue;
+		[PTBR + 2*EPN + 1] = "1100";
+			
+	multipop(R0,R1,R2);
+endif;
+
+
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = 0;
+
+multipop(EIP);
+restore;
+
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13];
+SP = SP + 1;
+[[PTBR+2*(SP/512)]*512+(SP%512)] = EIP;
+
+breakpoint;
+ireturn;

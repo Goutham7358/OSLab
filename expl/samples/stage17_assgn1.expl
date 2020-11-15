@@ -1,0 +1,17 @@
+int main()
+{
+	decl
+		int temp;
+		str programName,msg;
+	enddecl
+	begin
+		msg = "Prog Name";
+		temp = exposcall("Write",-2,msg);
+		temp = exposcall("Read",-1,programName);
+		temp = exposcall("Write",-2,programName);
+		breakpoint;
+		temp = exposcall("Exec",programName);
+		
+	return 0;
+	end
+}

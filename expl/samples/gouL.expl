@@ -1,0 +1,50 @@
+type 
+node {
+	int data;
+	node next;
+}
+endtype
+int main()
+{
+	decl
+		int val,temp;
+		int num,n,ncp;
+		node head;
+		node curr;
+		node varNode;
+		str msg,msg1;
+	enddecl
+	begin
+		head = null;
+		msg = "Enter num";
+		temp = exposcall("Write",-2,msg);
+		read(n);
+		val = initialize();
+		
+		while(n>0) do
+			read(num);
+			varNode=alloc();
+			varNode.data=num;
+			varNode.next=null;
+			if(head==null) then
+				head=varNode;
+				curr=varNode;
+			else
+				curr.next=varNode;
+				curr=curr.next;
+			endif;
+			n=n-1;
+		endwhile;
+		
+		write("Answer");
+		
+		curr=head;
+		while(curr!=null) do
+			write(curr.data);
+			curr=curr.next;
+		endwhile;
+		
+	return 0;
+	end
+	
+}

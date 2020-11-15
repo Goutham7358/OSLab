@@ -1,0 +1,164 @@
+loadi(63,13);
+loadi(64,14);
+
+loadi(65,7); //init program from disk 7 and 8
+loadi(66,8);
+
+loadi(22,35); //INT10 module from disk to memory
+loadi(23,36);
+
+loadi(2, 15); // Exception Handler Routine 
+loadi(3, 16);
+
+loadi(4, 17); //timer interrupt routine
+loadi(5, 18);
+
+loadi(16,29); //INT7 routine 
+loadi(17,30);
+
+loadi(50,63);  // Module 5 Scheduler
+loadi(51,64);
+
+loadi(40,53); // Module 0 Device Manager
+loadi(41,54);
+
+loadi(48,61); // Module 4 Resource Manager
+loadi(49,62);
+
+loadi(8,21); // console interrupt routine
+loadi(9,22);
+
+loadi(6,19);	// disk interrupt routine
+loadi(7,20);
+
+loadi(14,27); // INT6 routine
+loadi(15,28);
+
+loadi(20,33); //INT 9 routine
+loadi(21,34);
+
+loadi(24,37);     //INT 11 routine
+loadi(25,38);
+
+loadi(28,41); 	//INT 13 routine
+loadi(29,42);
+
+loadi(30,43); 	//INT 14 routine
+loadi(31,44);
+
+loadi(32,45);     // INT 15
+loadi(33,46);
+
+loadi(42,55); //Module 1
+loadi(43,56);
+
+loadi(44,57); // Module 2
+loadi(45,58);
+
+loadi(59,3); // InodeUser Table
+loadi(60,4);
+
+loadi(61,2);  // Disk Free List
+
+loadi(18,31);  // INT 8 routine fork
+loadi(19,32);     
+
+PTBR = PAGE_TABLE_BASE + 20;
+
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = 78;
+[PTBR+5] = "0110";
+[PTBR+6] = 79;
+[PTBR+7] = "0110";
+
+//Code
+[PTBR+8] = 65;
+[PTBR+9] = "0100";
+[PTBR+10] = 66;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 76;
+[PTBR+17] = "0110";
+[PTBR+18] = 77;
+[PTBR+19] = "0110";
+
+
+
+
+
+[PROCESS_TABLE +16 + 11] = 80;     // init program
+[PROCESS_TABLE + 16 + 1] = 1;
+[PROCESS_TABLE + 16 + 4] = CREATED;
+[PROCESS_TABLE + 16 + 13] = 8*512;
+[PROCESS_TABLE + 16 + 12] = 0;
+[PROCESS_TABLE + 16 + 14] = PAGE_TABLE_BASE + 20;
+[PROCESS_TABLE + 16 + 15] = 10;
+[PROCESS_TABLE + 16] = 0;
+
+
+
+[TERMINAL_STATUS_TABLE] = 0;
+
+alias counter R4;
+counter = 2;
+while(counter<=15) do
+	[PROCESS_TABLE + counter*16 + 4] = TERMINATED;
+	counter = counter + 1;
+endwhile;
+
+counter = 0;
+
+while(counter<=82) do                       
+	[MEMORY_FREE_LIST + counter] = 1;
+	counter = counter + 1;
+endwhile;
+
+while(counter<=127) do
+	[MEMORY_FREE_LIST + counter] = 0;
+	counter = counter + 1;
+endwhile;
+
+[SYSTEM_STATUS_TABLE + 2] = 45;
+[SYSTEM_STATUS_TABLE + 3] = 0;
+
+[DISK_STATUS_TABLE] = 0;
+
+counter = 0;
+	while(counter<8) do
+		[[PROCESS_TABLE +16 + 11]*512 + 512 -16 + 2*counter] = -1;
+		counter = counter + 1;
+	endwhile;
+
+[76*512] = [65*512 + 1]; // init program
+
+counter = 2;
+while(counter < 10) do
+		[DISK_MAP_TABLE + 10 + counter] = -1;
+	counter = counter + 1;
+endwhile;
+
+counter=0;
+while(counter<32) do
+	[SEMAPHORE_TABLE+4*counter]=-1;
+	[SEMAPHORE_TABLE+4*counter+1]=0;
+	counter=counter+1;
+endwhile;
+
+[DISK_MAP_TABLE + 10 + 4] = 65;
+[DISK_MAP_TABLE + 10 + 5] = 66;	
+
+PTBR = PAGE_TABLE_BASE;
+
+
+
+return;

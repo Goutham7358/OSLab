@@ -1,0 +1,36 @@
+0
+2056
+0
+0
+0
+0
+0
+0
+MOV R0, 1
+MOV R2, 5
+GE R2, R0
+JZ R2, 2110
+MOV R1, R0
+MUL R1, R0
+PUSH R0	// saving register context the user program has to do this
+PUSH R1
+PUSH R2
+MOV R0, 5	// pushing system call number and arguments this is expected by the interrupt handler
+MOV R2, -2
+PUSH R0
+PUSH R2
+PUSH R1
+PUSH R0
+PUSH R0	//  pushing space for return value
+INT 7
+POP R1		// poping out return value and ignore
+POP R1		// pop out argumnets and system call number and ignore
+POP R1
+POP R1
+POP R1
+POP R2		//  restoring the register context
+POP R1
+POP R0
+ADD R0, 1
+JMP 2058
+INT 10

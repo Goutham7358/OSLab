@@ -1,0 +1,141 @@
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = 9;
+alias userSP R0;
+userSP = SP;
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13] = SP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+
+alias physicalPageNum R1;
+alias offset R2;
+alias fileNameAddr R3;
+physicalPageNum = [PTBR + 2*(userSP-4)/512];
+offset = (userSP-4)%512;
+fileNameAddr = (physicalPageNum*512) + offset;
+alias fileName R4;
+fileName = [fileNameAddr];
+
+alias counter R5;
+counter=0;
+alias inodeIndex R6;
+inodeIndex = -1;
+while(counter < 60) do
+	if(([INODE_TABLE +counter*16 + 1] == fileName) && ([INODE_TABLE + counter*16] == 3)) then
+		inodeIndex = INODE_TABLE + counter*16;
+		break;
+	endif;
+	counter = counter + 1;
+endwhile;
+
+
+
+if(inodeIndex == -1) then
+	alias physicalAddrRetVal R7;
+	physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+	[physicalAddrRetVal] = -1;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9] = 0;
+	SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 + 13];
+	ireturn;
+else
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+	alias funcNumber R1;
+	alias currentPID R2;
+	funcNumber = 3;
+	currentPID = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_1;
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+	
+	
+	
+	alias userPNumber R8;
+	userPNumber = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11];
+	[MEMORY_FREE_LIST + userPNumber] = [MEMORY_FREE_LIST + userPNumber] + 1;
+	
+	counter = 0;
+	while(counter<8) do
+		[userPNumber*512 + 512 -16 + 2*counter] = -1;
+		counter = counter + 1;
+	endwhile;
+	
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+	
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE +1]*16 + 4] = RUNNING;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+ 1]*16 + 7] = inodeIndex;
+	
+	[PTBR+0] = 63;
+	[PTBR+1] = "0100";
+	[PTBR+2] = 64;
+	[PTBR+3] = "0100";
+
+	counter = 0;
+	while(counter < 2) do
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+		alias funcNumber R1;
+		alias retValue R0;
+		funcNumber = 1;
+		call MOD_2;
+		[PTBR + 2*(counter+2)] = retValue;
+		[PTBR + 2*(counter+2) + 1] = "0110";
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+		counter = counter + 1;
+	endwhile;
+	
+	
+	
+	counter = 0;
+	while(counter < 2) do
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+		alias funcNumber R1;
+		alias retValue R0;
+		funcNumber = 1;
+		call MOD_2;
+		[PTBR + 2*(counter+8)] = retValue;
+		[PTBR + 2*(counter+8) + 1] = "0110";
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+		counter = counter + 1;
+	endwhile;
+	
+	
+	counter = 0;
+	while(counter < 4) do
+		if([inodeIndex + counter + 8] == -1) then
+			[PTBR + 2*(counter+4)] = -1;
+			[PTBR + 2*(counter+4) + 1] = "0000";
+		else
+			multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+			alias funcNumber R1;
+			alias retValue R0;
+			funcNumber = 1;
+			call MOD_2;
+			[PTBR + 2*(counter+4)] = retValue;
+			[PTBR + 2*(counter+4) + 1] = "0100";
+			
+			multipush(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+			alias functionNum R1;
+			alias currentPID R2;
+			alias pageNum R4;
+			alias blockNum R5;
+			
+			functionNum = 2;
+			currentPID = [SYSTEM_STATUS_TABLE +1];
+			pageNum = retValue;
+			blockNum  = [inodeIndex + counter + 8];
+			
+			call MOD_4;
+			
+			multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+			
+			multipop(R0,R1,R2,R3,R4,R5,R6,R7,R8);
+			
+			alias counter R5;
+		endif;
+	counter = counter + 1;
+	endwhile;
+	
+	
+	[[PTBR + 16]*512] = [[PTBR + 8]*512 + 1];
+	
+	SP = 8*512;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9] = 0;
+	ireturn;
+endif;
+

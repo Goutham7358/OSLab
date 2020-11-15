@@ -1,0 +1,100 @@
+alias userSP R5;
+userSP=SP;
+
+alias processTAddr R7;
+processTAddr = PROCESS_TABLE +[SYSTEM_STATUS_TABLE+1]*16;
+
+[processTAddr + 13] = SP;        // saving value of SP => USER SP 
+SP = [processTAddr + 11]*512 - 1; // SP=>beginning of user area page
+
+alias sysCallNum R6;
+sysCallNum = [([PTBR + 2*(userSP-5)/512]*512) + ((userSP-5)%512)]; // getting syscall from user stack
+
+[processTAddr + 9] = sysCallNum; //set the MODEFLAG with syscallnum  
+
+alias physicalAddrRetVal R10;
+physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+
+if(sysCallNum==19) then  // Sem Lock
+	alias semDes R8;
+	alias semTID R9;
+	semDes=[([PTBR + 2*(userSP-4)/512]*512) + ((userSP-4)%512)];
+	
+	if((semDes<0)||(semDes>7)) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	
+	if([[processTAddr + 11]*512+ 496+2*semDes]!=SEMAPHORE) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	semTID=[[processTAddr + 11]*512+ 496+2*semDes +1];
+	while(([SEMAPHORE_TABLE+4*semTID]!=[SYSTEM_STATUS_TABLE+1])&&([SEMAPHORE_TABLE+4*semTID]!=-1)) do
+		[processTAddr+4]=WAIT_SEMAPHORE;
+		[processTAddr+5]=semTID;
+		multipush(R5,R6,R7,R8,R9,R10);
+			call MOD_5;
+		multipop(R5,R6,R7,R8,R9,R10);
+	endwhile;
+	
+	[SEMAPHORE_TABLE+4*semTID]=[SYSTEM_STATUS_TABLE+1];
+	[physicalAddrRetVal]=0;
+	[processTAddr +9]=0;
+	SP=[processTAddr+13];
+	ireturn;	
+endif;
+
+if(sysCallNum==20) then // Sem Unlock
+	alias semDes R8;
+	alias semTID R9;
+	semDes=[([PTBR + 2*(userSP-4)/512]*512) + ((userSP-4)%512)];
+	
+	if((semDes<0)||(semDes>7)) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	
+	if([[processTAddr + 11]*512+ 496+2*semDes]!=SEMAPHORE) then
+		[physicalAddrRetVal]=-1;
+		[processTAddr +9]=0;
+		SP=[processTAddr+13];
+		ireturn;
+	endif;
+	
+	semTID=[[processTAddr + 11]*512+ 496+2*semDes +1];
+	
+	if([SEMAPHORE_TABLE+4*semTID]!=-1) then
+		if([SEMAPHORE_TABLE+4*semTID]!=[SYSTEM_STATUS_TABLE+1]) then
+			[physicalAddrRetVal]=-2;
+			[processTAddr +9]=0;
+			SP=[processTAddr+13];
+			ireturn;
+		endif;
+		
+		[SEMAPHORE_TABLE+4*semTID]=-1;
+		
+		alias counter R4;
+		counter=0;
+		while(counter<16) do
+			if(([PROCESS_TABLE+counter*16+4]==WAIT_SEMAPHORE)&&([PROCESS_TABLE+counter*16+5]==semTID)) then
+				[PROCESS_TABLE+counter*16+4]=READY;	
+			endif;
+		counter=counter+1;
+		endwhile;
+	endif;
+	
+	[physicalAddrRetVal]=0;
+	[processTAddr +9]=0;
+	SP=[processTAddr+13];
+	ireturn;
+	
+endif;
+
+

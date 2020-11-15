@@ -1,0 +1,118 @@
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = 8; // setting MODE FLAG 
+alias userSP R5;
+userSP=SP;
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13] = SP;        // saving value of SP => USER SP 
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1; // SP=>beginning of user area page
+
+alias INTcounter R4;
+alias retValue R0;
+alias funcNumber R1;
+alias currentPid R2;
+alias childPID R7;
+
+multipush(R1,R2,R3,R4,R5,R6,R7);
+funcNumber = 1;
+currentPid=[SYSTEM_STATUS_TABLE+1];
+call MOD_1; //calling Process Manager
+[PROCESS_TABLE + retValue*16 +1]=retValue;
+multipop(R1,R2,R3,R4,R5,R6,R7);
+
+childPID=retValue;
+if (retValue==-1) then
+	print("NOTHERE!");
+	alias physicalAddrRetVal R6;
+	physicalAddrRetVal = ([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);
+	[physicalAddrRetVal] = 0;
+	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9] = 0;
+	SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13];
+	ireturn;
+endif;
+
+if ([PTBR+4]==-1) then // if heap page is not allocated then do that
+	INTcounter = 0;
+	print("HERE");
+	while(INTcounter < 2) do
+		multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+		funcNumber = 1;         // GET_FREE_PAGE from Memory Manager
+		call MOD_2;
+		[PTBR + 2*(INTcounter+2)] = retValue;
+		[PTBR + 2*(INTcounter+2) + 1] = "1110";
+		multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+		INTcounter = INTcounter + 1;
+	endwhile;
+endif;			
+INTcounter=0;
+while(INTcounter<2) do
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+	funcNumber=1;
+	call MOD_2;
+	[PAGE_TABLE_BASE +childPID*20 + 2*(INTcounter+8)]=retValue;
+	[PAGE_TABLE_BASE +childPID*20 +2*(INTcounter+8)+1]="1110";
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+	INTcounter=INTcounter+1;
+endwhile;
+
+multipush(R0,R1,R2,R3,R4,R5,R6,R7); // Child's User Area Page
+funcNumber = 1;         // GET_FREE_PAGE from Memory Manager
+call MOD_2;
+[PROCESS_TABLE + childPID*16 + 11]=retValue;
+multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+
+alias parentp R8;
+parentp=PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16;
+alias childp R9;
+childp=PROCESS_TABLE+childPID*16;
+[childp +3]=[parentp +3]; // USERID
+[childp +6]=[parentp +6]; // SWAP FLAG
+[childp +7]=[parentp +7]; // INODE INDEX
+[childp +10]=[parentp +10]; // USER AREA SWAP STATUS
+[childp +13]=[parentp +13]; // USER STACK POINTER
+
+[childp +2]=[SYSTEM_STATUS_TABLE+1]; // PPID
+[childp +9]=0; // MODE FLAG
+[childp +12]=0; // KPTR
+[childp +0]=0; // TICK
+[childp +4]=CREATED; // STATE
+
+INTcounter=496;
+while(INTcounter<512) do // pre-process resource table
+	[[PROCESS_TABLE + childPID*16 + 11]+INTcounter]=[[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16]+INTcounter];
+	INTcounter=INTcounter+1;
+endwhile;
+
+INTcounter=0;
+while(INTcounter<10) do
+	[DISK_MAP_TABLE +childPID*20 +INTcounter]=[DISK_MAP_TABLE +[SYSTEM_STATUS_TABLE +1]*10 +INTcounter];
+	INTcounter=INTcounter+1;
+endwhile;
+
+INTcounter=0;
+while(INTcounter<8) do //sharing heap,code and library pages
+	[PAGE_TABLE_BASE +childPID*20 + 2*INTcounter] = [PTBR + 2*INTcounter];
+	[PAGE_TABLE_BASE +childPID*20 +2*INTcounter+1] = [PTBR +2*INTcounter+1];
+	[MEMORY_FREE_LIST + [PTBR +2*INTcounter]] = [MEMORY_FREE_LIST +[PTBR +2*INTcounter]]+1;
+	INTcounter=INTcounter+1;
+endwhile;
+
+INTcounter=0;
+while(INTcounter<512) do //copying user stack
+	[[PAGE_TABLE_BASE +childPID*20 + 16]*512+INTcounter] = [[PTBR+ 16]*512+INTcounter];
+	[[PAGE_TABLE_BASE +childPID*20 + 18]*512+INTcounter] = [[PTBR+ 18]*512+INTcounter];
+	INTcounter=INTcounter+1;
+endwhile;
+
+[[PROCESS_TABLE + childPID*16 +11]*512]=BP;
+
+alias physicalAddrRetVal R6;
+physicalAddrRetVal=([PTBR + 2*(userSP-1)/512]*512) + ((userSP-1)%512);	
+[physicalAddrRetVal]=childPID;     // return value of childPID to parent
+
+alias childSP R8;
+childSP=[PROCESS_TABLE+childPID*16+13];
+
+physicalAddrRetVal=([PAGE_TABLE_BASE +childPID*20 + 2*(childSP-1)/512]*512) + ((childSP-1)%512);
+[physicalAddrRetVal]=0;           // return value of 0 to child	
+
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9]=0;
+SP=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13];
+ireturn;

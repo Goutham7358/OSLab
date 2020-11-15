@@ -1,0 +1,63 @@
+alias functionNum R1;
+alias currentPID R2;
+alias word R3;
+alias pageNum R4;
+alias blockNum R5;
+if(functionNum == 3) then
+	multipush(R0,R1,R2,R3); // Acquiring Terminal
+	functionNum = 8;
+	call MOD_0;
+	multipop(R0,R1,R2,R3);
+	
+	print word;
+	
+	multipush(R0,R1,R2,R3); //releasing Terminal
+	functionNum = 9;
+	call MOD_0;
+	multipop(R0,R1,R2,R3);
+	
+	return;
+endif;
+if(functionNum == 4) then
+	
+	multipush(R0,R1,R2,R3);
+	functionNum = 8;
+	call MOD_0;
+	multipop(R0,R1,R2,R3);
+	
+	read;
+	[PROCESS_TABLE + currentPID*16 + 4] = WAIT_TERMINAL;
+	
+	
+	multipush(R0,R1,R2,R3);   // context switch module calling scheduler
+	call MOD_5;
+	multipop(R0,R1,R2,R3);
+	
+	[[PTBR + 2*(word/512)]*512 + (word%512) ] = [PROCESS_TABLE + currentPID*16 + 8 ];
+	
+	return;
+endif;
+if(functionNum == 2) then
+	print("f2MOD4");
+	multipush(R0,R1,R2,R3,R4,R5); // Acquiring Disk
+	functionNum = 3;
+	call MOD_0;
+	multipop(R0,R1,R2,R3,R4,R5);	
+	print("AcquiredDISK");
+	[DISK_STATUS_TABLE] = 1;
+	[DISK_STATUS_TABLE + 1] = 0;
+	[DISK_STATUS_TABLE + 2] = pageNum;
+	[DISK_STATUS_TABLE + 3] = blockNum;
+	[DISK_STATUS_TABLE + 4] = currentPID;
+	
+	load(pageNum,blockNum);
+	
+	[PROCESS_TABLE + currentPID*16 +4] = WAIT_DISK;
+
+	multipush(R0,R1,R2,R3,R4,R5);
+	call MOD_5;
+	multipop(R0,R1,R2,R3,R4,R5);
+endif;
+	
+return;
+

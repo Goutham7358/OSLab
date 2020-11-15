@@ -1,0 +1,9 @@
+counter=0;
+while(counter<8) do
+	if([[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16 +11]*512+496+2*counter]==SEMAPHORE) then
+		alias semTID R10;
+		semTID=[[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16 +11]*512+496+2*counter+1];
+		[SEMAPHORE_TABLE+4*semTID+1]=[SEMAPHORE_TABLE+4*semTID+1]+1;
+	endif;
+	counter=counter+1;
+endwhile;

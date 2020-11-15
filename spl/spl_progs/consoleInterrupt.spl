@@ -1,0 +1,21 @@
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13] = SP;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 11]*512 - 1;
+backup;
+alias reqPID R0;
+reqPID = [TERMINAL_STATUS_TABLE + 1];
+breakpoint;
+[PROCESS_TABLE + reqPID*16 + 8] = P0;
+breakpoint;
+multipush(R0,R1,R2);
+alias funcName R1;
+alias pid R2;
+funcName = 9;
+pid = reqPID;
+call MOD_0;
+multipop(R0,R1,R2);
+restore;
+SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 13];
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1]*16) + 9] = 0;
+ireturn;
+
+

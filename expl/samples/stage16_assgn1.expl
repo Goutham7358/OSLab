@@ -1,0 +1,46 @@
+decl
+	int a[10];
+enddecl
+int main()
+{
+	decl
+		int n,i,var,temp,j;
+		str msg;
+	enddecl
+	begin
+		msg = "Enter your limit";
+		temp = exposcall("Write",-2,msg);
+		temp = exposcall("Read",-1,n);
+		msg = "Enter your numbers";
+		temp = exposcall("Write",-2,msg);
+		i = 0;
+		while(i<n) do
+			temp = exposcall("Read",-1,a[i]);
+			i = i + 1;
+		endwhile;
+		msg = "Sorted Array";
+		temp = exposcall("Write",-2,msg);
+		
+		i = 0;
+		while(i < (n -1)) do
+			j = 0;
+			while(j < (n - i - 1)) do
+				if(a[j]>a[j+1]) then
+					temp = a[j];
+					a[j] = a[j+1];
+					a[j+1] = temp;
+				endif;
+			j = j + 1;
+			endwhile;
+		i = i + 1;
+		endwhile;
+		
+		i =0;
+		while(i<n) do
+			temp = exposcall("Write",-2,a[i]);
+			i = i + 1;
+		endwhile;
+		
+		return 0;
+	end
+}
